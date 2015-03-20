@@ -1,0 +1,15 @@
+{
+  "name": "superpowers-text-plugin",
+  "version": "1.1.0",
+  "description": "This plugin for Superpowers, the extensible HTML5 2D+3D game engine brings a font asset and a TextRenderer",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ralmn/superpowers-text-plugin.git"
+  },
+  "author": "ralmn",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ralmn/superpowers-text-plugin/issues"
+  },
+  "homepage": "https://github.com/ralmn/superpowers-text-plugin"
+}

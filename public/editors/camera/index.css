@@ -1,0 +1,20 @@
+body {
+  display: flex;
+}
+label {
+  font-weight: bold;
+}
+.sidebar {
+  margin: 5px;
+  width: 250px;
+  border-right: 1px solid #aaa;
+  display: flex;
+  flex-flow: column;
+}
+.main {
+  flex: 1;
+}
+canvas {
+  width: 100%;
+  height: 100%;
+}

@@ -1,0 +1,25 @@
+doctype html
+html
+	head
+		link(rel="stylesheet",href="/client/styles/reset.css")
+		link(rel="stylesheet",href="/client/styles/dialogs.css")
+		link(rel="stylesheet",href="index.css")
+		title Camera preview
+
+	body
+		.sidebar
+			label Scene 
+			select(id="scene-select")
+			br
+			//- label Camera 
+			//- select(id="camera-txt")
+			//- br
+		.main
+			canvas
+
+	script(src="/core/SupCore.js")
+	script(src="../../data.js")
+	script(src="/system/SupEngine.js")
+	script(src="../../components.js")
+	script(src="/client/SupClient.js")
+	script(src="index.js")
