@@ -1,7 +1,6 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 var THREE, TransformMarker, _onAssetReceived, _onEntriesReceived, async, cameraPreviewSubscriber, createNodeActor, createNodeActorComponent, data, entriesSubscriber, info, onAssetCommands, onAssetEdited, onAssetReceived, onConnected, onSceneChange, qs, socket, start, tick, ui,
-  slice = [].slice,
-  indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
+  slice = [].slice;
 
 qs = require('querystring').parse(window.location.search.slice(1));
 
@@ -116,11 +115,14 @@ createNodeActor = function(node) {
 };
 
 createNodeActorComponent = function(sceneNode, sceneComponent, nodeActor) {
-  var actorComponent, componentClass, componentUpdater, ref;
+  var actorComponent, componentClass, componentUpdater, ref, ref1;
   if (((ref = ui.bySceneNodeId[sceneNode.id]) != null ? ref.bySceneComponentId[sceneComponent.id] : void 0) != null) {
     return;
   }
   console.log(SupEngine.componentPlugins);
+  if ((ref1 = sceneComponent.type) === 'Behavior' || ref1 === 'ArcadeBody2D') {
+    return;
+  }
   componentClass = SupEngine.componentPlugins[sceneComponent.type];
   if (componentClass == null) {
     return;
@@ -196,7 +198,7 @@ _onAssetReceived = function(assetId, asset) {
   var i, len, node, ref, walk;
   data.asset = asset;
   walk = function(node) {
-    var actor, component, i, len, ref;
+    var actor, child, component, i, j, len, len1, ref, ref1;
     actor = createNodeActor(node);
     if (node.components.length > 0) {
       ref = node.components;
@@ -206,7 +208,11 @@ _onAssetReceived = function(assetId, asset) {
       }
     }
     if ((node.children != null) && node.children.length > 0) {
-      walk(childfor(indexOf.call(node.children, child) >= 0));
+      ref1 = node.children;
+      for (j = 0, len1 = ref1.length; j < len1; j++) {
+        child = ref1[j];
+        walk(child);
+      }
     }
   };
   ref = data.asset.nodes.pub;

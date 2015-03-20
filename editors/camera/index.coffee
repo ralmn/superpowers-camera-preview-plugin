@@ -93,6 +93,7 @@ createNodeActorComponent = (sceneNode, sceneComponent, nodeActor) ->
   if ui.bySceneNodeId[sceneNode.id]?.bySceneComponentId[sceneComponent.id]?
     return
   console.log(SupEngine.componentPlugins)
+  return if sceneComponent.type in ['Behavior', 'ArcadeBody2D']
   componentClass = SupEngine.componentPlugins[sceneComponent.type]
   return if !componentClass?
   actorComponent = new componentClass nodeActor
@@ -158,7 +159,7 @@ _onAssetReceived = (assetId, asset) ->
         createNodeActorComponent node, component, actor
 
     if node.children? and node.children.length > 0
-      walk childfor child in node.children
+      walk child for child in node.children
     return
   walk node, null, null for node in data.asset.nodes.pub
   return
