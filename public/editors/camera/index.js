@@ -122,6 +122,9 @@ createNodeActorComponent = function(sceneNode, sceneComponent, nodeActor) {
   }
   console.log(SupEngine.componentPlugins);
   componentClass = SupEngine.componentPlugins[sceneComponent.type];
+  if (componentClass == null) {
+    return;
+  }
   actorComponent = new componentClass(nodeActor);
   componentUpdater = null;
   if (componentClass.Updater) {

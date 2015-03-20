@@ -94,6 +94,7 @@ createNodeActorComponent = (sceneNode, sceneComponent, nodeActor) ->
     return
   console.log(SupEngine.componentPlugins)
   componentClass = SupEngine.componentPlugins[sceneComponent.type]
+  return if !componentClass?
   actorComponent = new componentClass nodeActor
   componentUpdater = null
   if componentClass.Updater
