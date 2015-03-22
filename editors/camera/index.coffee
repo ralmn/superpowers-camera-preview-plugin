@@ -44,15 +44,22 @@ onConnected = ->
   return
 
 _onEntriesReceived = (entries) ->
-  for entry in entries.pub
+  console.log(entries)
+  walk = (entry, parent) ->
+    if parent?
+      fullName = parent + "/" +entry.name
+    else
+      fullName = entry.name
     if entry?.type == "scene"
-      option = document.createElement "option"
-      option.value = entry.name
-      option.textContent = entry.name
-      @sceneElm.appendChild option
-      continue
+        option = document.createElement "option"
+        option.value = fullName
+        option.textContent = fullName
+        @sceneElm.appendChild option    
+    if entry.children? and entry.children.length > 0
+      walk child, fullName for child in entry.children
+  walk entry, null for entry in entries.pub
 
-
+  console.log('ok ?', @sceneElm)
   onSceneChange()
 
 
@@ -67,8 +74,10 @@ onAssetEdited = (id, command, args...) ->
 onSceneChange = () ->
   ui.gameInstance.destroyAllActors()
   sceneName = @sceneElm.value
+  console.log sceneName 
   entry = SupClient.findEntryByPath data.projectClient.entries.pub, sceneName
-  if entry
+  console.log entry
+  if entry?
     data.projectClient.sub entry.id, 'scene', cameraPreviewSubscriber
   return
 

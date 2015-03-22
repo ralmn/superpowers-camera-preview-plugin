@@ -56,18 +56,37 @@ onConnected = function() {
 };
 
 _onEntriesReceived = function(entries) {
-  var entry, i, len, option, ref;
+  var entry, i, len, ref, walk;
+  console.log(entries);
+  walk = function(entry, parent) {
+    var child, fullName, i, len, option, ref, results;
+    if (parent != null) {
+      fullName = parent + "/" + entry.name;
+    } else {
+      fullName = entry.name;
+    }
+    if ((entry != null ? entry.type : void 0) === "scene") {
+      option = document.createElement("option");
+      option.value = fullName;
+      option.textContent = fullName;
+      this.sceneElm.appendChild(option);
+    }
+    if ((entry.children != null) && entry.children.length > 0) {
+      ref = entry.children;
+      results = [];
+      for (i = 0, len = ref.length; i < len; i++) {
+        child = ref[i];
+        results.push(walk(child, fullName));
+      }
+      return results;
+    }
+  };
   ref = entries.pub;
   for (i = 0, len = ref.length; i < len; i++) {
     entry = ref[i];
-    if ((entry != null ? entry.type : void 0) === "scene") {
-      option = document.createElement("option");
-      option.value = entry.name;
-      option.textContent = entry.name;
-      this.sceneElm.appendChild(option);
-      continue;
-    }
+    walk(entry, null);
   }
+  console.log('ok ?', this.sceneElm);
   return onSceneChange();
 };
 
@@ -85,8 +104,10 @@ onSceneChange = function() {
   var entry, sceneName;
   ui.gameInstance.destroyAllActors();
   sceneName = this.sceneElm.value;
+  console.log(sceneName);
   entry = SupClient.findEntryByPath(data.projectClient.entries.pub, sceneName);
-  if (entry) {
+  console.log(entry);
+  if (entry != null) {
     data.projectClient.sub(entry.id, 'scene', cameraPreviewSubscriber);
   }
 };
