@@ -1,5 +1,5 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-var THREE, TransformMarker, _onAssetReceived, _onEntriesReceived, async, cameraPreviewSubscriber, createNodeActor, createNodeActorComponent, data, entriesSubscriber, info, onAssetCommands, onAssetEdited, onAssetReceived, onConnected, onSceneChange, qs, socket, start, tick, ui,
+var THREE, TransformMarker, _onAssetReceived, _onEntriesReceived, async, cameraPreviewSubscriber, createNodeActor, createNodeActorComponent, data, entriesSubscriber, info, onAssetCommands, onAssetEdited, onAssetReceived, onConnected, onSceneChange, qs, setupsCompopent, socket, start, tick, ui,
   slice = [].slice;
 
 qs = require('querystring').parse(window.location.search.slice(1));
@@ -40,9 +40,7 @@ start = function() {
   entriesSubscriber.onEntriesReceived = _onEntriesReceived.bind(this);
   cameraPreviewSubscriber.onAssetReceived = _onAssetReceived.bind(this);
   cameraPreviewSubscriber.onAssetEdited = onAssetEdited.bind(this);
-  cameraPreviewSubscriber.onAssetTrashed = function() {
-    return console.log("trash");
-  };
+  cameraPreviewSubscriber.onAssetTrashed = function() {};
   ui.tickAnimationFrameId = requestAnimationFrame(tick);
 };
 
@@ -57,7 +55,6 @@ onConnected = function() {
 
 _onEntriesReceived = function(entries) {
   var entry, i, len, ref, walk;
-  console.log(entries);
   walk = function(entry, parent) {
     var child, fullName, i, len, option, ref, results;
     if (parent != null) {
@@ -86,7 +83,6 @@ _onEntriesReceived = function(entries) {
     entry = ref[i];
     walk(entry, null);
   }
-  console.log('ok ?', this.sceneElm);
   return onSceneChange();
 };
 
@@ -104,9 +100,7 @@ onSceneChange = function() {
   var entry, sceneName;
   ui.gameInstance.destroyAllActors();
   sceneName = this.sceneElm.value;
-  console.log(sceneName);
   entry = SupClient.findEntryByPath(data.projectClient.entries.pub, sceneName);
-  console.log(entry);
   if (entry != null) {
     data.projectClient.sub(entry.id, 'scene', cameraPreviewSubscriber);
   }
@@ -135,12 +129,13 @@ createNodeActor = function(node) {
   return nodeActor;
 };
 
+setupsCompopent = {};
+
 createNodeActorComponent = function(sceneNode, sceneComponent, nodeActor) {
   var actorComponent, componentClass, componentUpdater, ref, ref1;
   if (((ref = ui.bySceneNodeId[sceneNode.id]) != null ? ref.bySceneComponentId[sceneComponent.id] : void 0) != null) {
     return;
   }
-  console.log(SupEngine.componentPlugins);
   if ((ref1 = sceneComponent.type) === 'Behavior' || ref1 === 'ArcadeBody2D') {
     return;
   }
@@ -152,20 +147,63 @@ createNodeActorComponent = function(sceneNode, sceneComponent, nodeActor) {
   componentUpdater = null;
   if (componentClass.Updater) {
     componentUpdater = new componentClass.Updater(data.projectClient, actorComponent, sceneComponent.config);
+  } else {
+    if (setupsCompopent[sceneComponent.type + "Component"] != null) {
+      setupsCompopent[sceneComponent.type + "Component"](actorComponent, sceneComponent.config);
+    }
   }
   ui.bySceneNodeId[sceneNode.id].bySceneComponentId[sceneComponent.id] = {
     component: actorComponent,
-    componentUpdater: null
+    componentUpdater: componentUpdater
   };
 };
 
 onAssetCommands = {};
 
+setupsCompopent.CameraComponent = (function(_this) {
+  return function(cameraComponent, config) {
+    if (config.mode != null) {
+      cameraComponent.setOrthographicMode(config.mode === "orthographic");
+    }
+    if (config.orthographicScale != null) {
+      cameraComponent.setOrthographicScale(config.orthographicScale);
+    }
+    if (config.fov != null) {
+      cameraComponent.setFOV(config.FOV);
+    }
+    if (config.viewport != null) {
+      cameraComponent.setViewport(config.viewport.x, config.viewport.y, config.viewport.width, config.viewport.height);
+    }
+  };
+})(this);
+
+setupsCompopent.CameraComponentPropertyEdited = (function(_this) {
+  return function(cameraComponent, name, value) {
+    switch (name) {
+      case "mode":
+        cameraComponent.setOrthographicMode(value === "orthographic");
+        break;
+      case "fov":
+        cameraComponent.setFOV(value);
+        break;
+      case "orthographicScale":
+        cameraComponent.setOrthographicScale(value);
+    }
+  };
+})(this);
+
 onAssetCommands.setComponentProperty = function(nodeId, componentId, path, value) {
-  var componentUpdater;
-  componentUpdater = ui.bySceneNodeId[nodeId].bySceneComponentId[componentId].componentUpdater;
-  if (componentUpdater != null) {
-    componentUpdater.onConfigEdited(path, value);
+  var componentData, componentUpdater, newComponent;
+  componentData = ui.bySceneNodeId[nodeId].bySceneComponentId[componentId];
+  componentUpdater = componentData.componentUpdater;
+  if (typeof componentUpdate !== "undefined" && componentUpdate !== null) {
+    if (componentUpdater != null) {
+      componentUpdater.onConfigEdited(path, value);
+    }
+  } else {
+    if (setupsCompopent[componentData.component.typeName + "ComponentPropertyEdited"] != null) {
+      newComponent = setupsCompopent[componentData.component.typeName + "ComponentPropertyEdited"](componentData.component, path, value);
+    }
   }
 };
 
@@ -241,6 +279,7 @@ _onAssetReceived = function(assetId, asset) {
     node = ref[i];
     walk(node, null, null);
   }
+  ui.tickAnimationFrameId = requestAnimationFrame(tick);
 };
 
 tick = function() {

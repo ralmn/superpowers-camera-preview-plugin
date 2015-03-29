@@ -18,33 +18,31 @@ start = ->
   socket.on 'edit:assets', onAssetEdited
   socket.on 'trash:assets', SupClient.onAssetTrashed
 
-  
+
   @sceneElm = document.querySelector("#scene-select")
   @canvasElt = document.querySelector('canvas')
 
   @sceneElm.addEventListener 'change', onSceneChange.bind(@)
 
   ui.gameInstance = new SupEngine.GameInstance @canvasElt
-  
+
   entriesSubscriber.onEntriesReceived = _onEntriesReceived.bind(@)
   cameraPreviewSubscriber.onAssetReceived = _onAssetReceived.bind(@)
   cameraPreviewSubscriber.onAssetEdited = onAssetEdited.bind @
-  cameraPreviewSubscriber.onAssetTrashed = () ->
-    console.log "trash"
+  cameraPreviewSubscriber.onAssetTrashed = () -> return
   ui.tickAnimationFrameId = requestAnimationFrame tick
   return
 
 
 # Network callbacks
 onConnected = ->
-  
+
   data = projectClient: new SupClient.ProjectClient socket, { subEntries: true }
   data.projectClient.subEntries entriesSubscriber
   #socket.emit 'sub', 'assets', info.assetId, onAssetReceived
   return
 
 _onEntriesReceived = (entries) ->
-  console.log(entries)
   walk = (entry, parent) ->
     if parent?
       fullName = parent + "/" +entry.name
@@ -54,12 +52,11 @@ _onEntriesReceived = (entries) ->
         option = document.createElement "option"
         option.value = fullName
         option.textContent = fullName
-        @sceneElm.appendChild option    
+        @sceneElm.appendChild option
     if entry.children? and entry.children.length > 0
       walk child, fullName for child in entry.children
   walk entry, null for entry in entries.pub
 
-  console.log('ok ?', @sceneElm)
   onSceneChange()
 
 
@@ -69,14 +66,12 @@ onAssetReceived = (err, asset) ->
 onAssetEdited = (id, command, args...) ->
   onAssetCommands[command]?.apply data.asset, args
   return
- 
+
 
 onSceneChange = () ->
   ui.gameInstance.destroyAllActors()
   sceneName = @sceneElm.value
-  console.log sceneName 
   entry = SupClient.findEntryByPath data.projectClient.entries.pub, sceneName
-  console.log entry
   if entry?
     data.projectClient.sub entry.id, 'scene', cameraPreviewSubscriber
   return
@@ -98,28 +93,60 @@ createNodeActor = (node) ->
 
   nodeActor
 
+setupsCompopent = {}
+
 createNodeActorComponent = (sceneNode, sceneComponent, nodeActor) ->
   if ui.bySceneNodeId[sceneNode.id]?.bySceneComponentId[sceneComponent.id]?
     return
-  console.log(SupEngine.componentPlugins)
+
   return if sceneComponent.type in ['Behavior', 'ArcadeBody2D']
+
   componentClass = SupEngine.componentPlugins[sceneComponent.type]
+  #componentClass = SupEngine.editorComponents["#{sceneComponent.type}Marker"] ? SupEngine.componentPlugins[sceneComponent.type]
+
   return if !componentClass?
+
   actorComponent = new componentClass nodeActor
   componentUpdater = null
   if componentClass.Updater
     componentUpdater = new componentClass.Updater data.projectClient, actorComponent, sceneComponent.config
+  else
+    if setupsCompopent["#{sceneComponent.type}Component"]?
+      setupsCompopent["#{sceneComponent.type}Component"] actorComponent, sceneComponent.config
+
   ui.bySceneNodeId[sceneNode.id].bySceneComponentId[sceneComponent.id] =
     component: actorComponent
-    componentUpdater: null
+    componentUpdater: componentUpdater
 
   return
 
 onAssetCommands = {}
 
+setupsCompopent.CameraComponent = (cameraComponent, config) =>
+  cameraComponent.setOrthographicMode config.mode == "orthographic" if config.mode?
+  cameraComponent.setOrthographicScale config.orthographicScale if config.orthographicScale?
+  cameraComponent.setFOV config.FOV if config.fov?
+  cameraComponent.setViewport config.viewport.x, config.viewport.y, config.viewport.width, config.viewport.height if config.viewport?
+  return
+
+setupsCompopent.CameraComponentPropertyEdited = (cameraComponent, name, value) =>
+  switch name
+    when "mode"
+      cameraComponent.setOrthographicMode value == "orthographic"
+    when "fov"
+      cameraComponent.setFOV value
+    when "orthographicScale"
+      cameraComponent.setOrthographicScale value
+  return
+
 onAssetCommands.setComponentProperty = (nodeId, componentId, path, value) ->
-  componentUpdater = ui.bySceneNodeId[nodeId].bySceneComponentId[componentId].componentUpdater
-  componentUpdater.onConfigEdited path, value if componentUpdater?
+  componentData = ui.bySceneNodeId[nodeId].bySceneComponentId[componentId]
+  componentUpdater = componentData.componentUpdater
+  if componentUpdate?
+    componentUpdater.onConfigEdited path, value if componentUpdater?
+  else
+    if setupsCompopent["#{componentData.component.typeName}ComponentPropertyEdited"]?
+      newComponent = setupsCompopent["#{componentData.component.typeName}ComponentPropertyEdited"] componentData.component, path, value
   return
 
 onAssetCommands.setNodeProperty = (id, path, value) ->
@@ -171,6 +198,7 @@ _onAssetReceived = (assetId, asset) ->
       walk child for child in node.children
     return
   walk node, null, null for node in data.asset.nodes.pub
+  ui.tickAnimationFrameId = requestAnimationFrame tick
   return
 
 tick = ->
@@ -205,6 +233,12 @@ async.each SupClient.pluginPaths.all, (pluginName, pluginCallback) ->
       componentEditorsScript.addEventListener 'load', -> cb()
       componentEditorsScript.addEventListener 'error', -> cb()
       document.body.appendChild componentEditorsScript
+    # (cb) ->
+    #   componentEditorsScript = document.createElement('script')
+    #   componentEditorsScript.src = "/plugins/#{pluginName}/runtime.js"
+    #   componentEditorsScript.addEventListener 'load', -> cb()
+    #   componentEditorsScript.addEventListener 'error', -> cb()
+    #   document.body.appendChild componentEditorsScript
 
   ], pluginCallback
 , (err) ->
