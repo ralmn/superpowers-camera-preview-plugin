@@ -102,7 +102,7 @@ onSceneChange = function() {
   sceneName = this.sceneElm.value;
   entry = SupClient.findEntryByPath(data.projectClient.entries.pub, sceneName);
   if (entry != null) {
-    data.projectClient.sub(entry.id, 'scene', cameraPreviewSubscriber);
+    data.projectClient.subAsset(entry.id, 'scene', cameraPreviewSubscriber);
   }
 };
 
@@ -139,7 +139,7 @@ createNodeActorComponent = function(sceneNode, sceneComponent, nodeActor) {
   if ((ref1 = sceneComponent.type) === 'Behavior' || ref1 === 'ArcadeBody2D') {
     return;
   }
-  componentClass = SupEngine.componentPlugins[sceneComponent.type];
+  componentClass = SupEngine.componentClasses[sceneComponent.type];
   if (componentClass == null) {
     return;
   }

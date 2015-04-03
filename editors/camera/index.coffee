@@ -73,7 +73,7 @@ onSceneChange = () ->
   sceneName = @sceneElm.value
   entry = SupClient.findEntryByPath data.projectClient.entries.pub, sceneName
   if entry?
-    data.projectClient.sub entry.id, 'scene', cameraPreviewSubscriber
+    data.projectClient.subAsset entry.id, 'scene', cameraPreviewSubscriber
   return
 
 createNodeActor = (node) ->
@@ -101,8 +101,8 @@ createNodeActorComponent = (sceneNode, sceneComponent, nodeActor) ->
 
   return if sceneComponent.type in ['Behavior', 'ArcadeBody2D']
 
-  componentClass = SupEngine.componentPlugins[sceneComponent.type]
-  #componentClass = SupEngine.editorComponents["#{sceneComponent.type}Marker"] ? SupEngine.componentPlugins[sceneComponent.type]
+  componentClass = SupEngine.componentClasses[sceneComponent.type]
+  #componentClass = SupEngine.editorComponents["#{sceneComponent.type}Marker"] ? SupEngine.componentClasses[sceneComponent.type]
 
   return if !componentClass?
 
