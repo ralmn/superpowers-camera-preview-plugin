@@ -143,7 +143,7 @@ onAssetCommands.setComponentProperty = (nodeId, componentId, path, value) ->
   componentData = ui.bySceneNodeId[nodeId].bySceneComponentId[componentId]
   componentUpdater = componentData.componentUpdater
   if componentUpdate?
-    componentUpdater.onConfigEdited path, value if componentUpdater?
+    componentUpdater.config_setProperty path, value if componentUpdater?
   else
     if setupsCompopent["#{componentData.component.typeName}ComponentPropertyEdited"]?
       newComponent = setupsCompopent["#{componentData.component.typeName}ComponentPropertyEdited"] componentData.component, path, value

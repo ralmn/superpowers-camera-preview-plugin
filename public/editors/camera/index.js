@@ -198,7 +198,7 @@ onAssetCommands.setComponentProperty = function(nodeId, componentId, path, value
   componentUpdater = componentData.componentUpdater;
   if (typeof componentUpdate !== "undefined" && componentUpdate !== null) {
     if (componentUpdater != null) {
-      componentUpdater.onConfigEdited(path, value);
+      componentUpdater.config_setProperty(path, value);
     }
   } else {
     if (setupsCompopent[componentData.component.typeName + "ComponentPropertyEdited"] != null) {
